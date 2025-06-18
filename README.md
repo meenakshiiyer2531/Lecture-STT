@@ -16,7 +16,7 @@ Lecture-STT is a full-stack web application designed to help students and resear
 
 ## ⚙️ Tech Stack
 
-- **Frontend**: *(Add your frontend framework here, e.g. React.js)*
+- **Frontend**: Next.js
 - **Backend**: Node.js, Express.js
 - **Database**: MongoDB Atlas
 - **OCR**: Tesseract.js
