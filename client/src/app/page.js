@@ -30,14 +30,14 @@ export default function LoginPage() {
             placeholder="👤 Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full mb-5 px-5 py-4 rounded-xl bg-white/10 border border-white/30 text-black placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500 text-lg"
+            className="w-full mb-5 px-5 py-4 rounded-xl bg-white/10 border border-white/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500 text-lg"
           />
           <input
             type="password"
             placeholder="🔒 Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full mb-8 px-5 py-4 rounded-xl bg-white/10 border border-white/30 text-black placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500 text-lg"
+            className="w-full mb-8 px-5 py-4 rounded-xl bg-white/10 border border-white/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500 text-lg"
           />
 
           <button
