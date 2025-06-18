@@ -14,11 +14,13 @@ export default function CourseDetailsPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [isUploadingAudio, setIsUploadingAudio] = useState(false);
 
+  const BACKEND_URL = "https://lecture-stt.onrender.com";
+
   useEffect(() => setMounted(true), []);
 
   const fetchMessages = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/courses/${id}/messages`);
+      const res = await axios.get(`${BACKEND_URL}/api/courses/${id}/messages`);
       setMessages(res.data);
     } catch (e) {
       console.error("Fetch failed:", e);
@@ -32,7 +34,7 @@ export default function CourseDetailsPage() {
   const sendText = async () => {
     if (!input.trim()) return;
     try {
-      await axios.post(`http://localhost:5000/api/courses/${id}/messages`, {
+      await axios.post(`${BACKEND_URL}/api/courses/${id}/messages`, {
         type: "text",
         content: input,
       });
@@ -53,7 +55,7 @@ export default function CourseDetailsPage() {
   const deleteMessage = async (messageId) => {
     if (!window.confirm("Are you sure you want to delete this message?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/courses/${id}/messages/${messageId}`);
+      await axios.delete(`${BACKEND_URL}/api/courses/${id}/messages/${messageId}`);
       fetchMessages();
     } catch (err) {
       console.error("Delete failed:", err);
@@ -63,11 +65,12 @@ export default function CourseDetailsPage() {
 
   const sendFile = async (e) => {
     const file = e.target.files[0];
-    if (!file || file.size > 10 * 1024 * 1024) return alert("Invalid file.");
+    if (!file || file.size > 10 * 1024 * 1024) return alert("File too large (max 10MB).");
+
     const fd = new FormData();
     fd.append("file", file);
     try {
-      await axios.post(`http://localhost:5000/api/courses/${id}/upload`, fd);
+      await axios.post(`${BACKEND_URL}/api/courses/${id}/upload`, fd);
       fetchMessages();
     } catch {
       alert("Upload failed");
@@ -83,26 +86,29 @@ export default function CourseDetailsPage() {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const mr = new MediaRecorder(stream);
         const chunks = [];
+
         mr.ondataavailable = (e) => chunks.push(e.data);
+
         mr.onstop = async () => {
           setIsUploadingAudio(true);
           const blob = new Blob(chunks, { type: "audio/webm" });
           const fd = new FormData();
-          fd.append("file", blob, "rec.webm");
+          fd.append("file", blob, "recording.webm");
           try {
-            await axios.post(`http://localhost:5000/api/courses/${id}/upload`, fd);
+            await axios.post(`${BACKEND_URL}/api/courses/${id}/upload`, fd);
             fetchMessages();
           } catch {
-            alert("Upload failed");
+            alert("Audio upload failed");
           } finally {
             setIsUploadingAudio(false);
           }
         };
+
         mediaRecorderRef.current = mr;
         mr.start();
         setIsRecording(true);
       } catch {
-        alert("Mic access denied");
+        alert("Microphone access denied");
       }
     }
   };
@@ -110,9 +116,9 @@ export default function CourseDetailsPage() {
   if (!mounted) return null;
 
   return (
-    <div className="flex flex-col max-h-[50vw] max-w-[90vw] mx-auto bg-gray-50 rounded shadow-xl h-screen">
+    <div className="flex flex-col h-full max-w-screen mx-auto bg-gray-50 text-black">
       <header className="sticky top-0 p-4 bg-white shadow text-center z-10">
-        <h1 className="text-purple-700 text-2xl font-semibold tracking-wide">🎓 Course Chat</h1>
+        <h1 className="text-purple-700 text-xl sm:text-2xl font-semibold tracking-wide">🎓 Course Chat</h1>
       </header>
 
       {isRecording && (
@@ -136,7 +142,7 @@ export default function CourseDetailsPage() {
 
               {m.type === "text" && (
                 <div className="flex justify-between items-center">
-                  <p className="text-gray-800">{m.content}</p>
+                  <p className="text-gray-800 break-words">{m.content}</p>
                   <button
                     onClick={() => deleteMessage(m._id)}
                     className="text-red-500 text-xs ml-2 opacity-0 group-hover:opacity-100 transition"
@@ -147,64 +153,49 @@ export default function CourseDetailsPage() {
               )}
 
               {m.type === "audio" && (
-                <>
-                  <audio controls className="w-full mt-1" src={`http://localhost:5000/uploads/${m.content}`} />
-                  <p className="text-sm italic text-gray-600 mt-1">{m.transcription}</p>
-                  <button
-                    onClick={() => deleteMessage(m._id)}
-                    className="text-red-500 text-xs mt-1"
-                  >
-                    ❌ Delete
-                  </button>
-                </>
+                <div className="space-y-1">
+                  <audio controls className="w-full mt-1" src={`${BACKEND_URL}/uploads/${m.content}`} />
+                  <p className="text-sm italic text-gray-600">{m.transcription}</p>
+                  <button onClick={() => deleteMessage(m._id)} className="text-red-500 text-xs">❌ Delete</button>
+                </div>
               )}
 
               {m.type === "pdf" && (
                 <div className="flex justify-between items-center">
                   <a
-                    href={`http://localhost:5000/uploads/${m.content}`}
+                    href={`${BACKEND_URL}/uploads/${m.content}`}
                     target="_blank"
-                    className="underline text-blue-600"
                     rel="noopener noreferrer"
+                    className="underline text-blue-600 truncate"
                   >
-                    📄 PDF File
+                    📄 View PDF
                   </a>
-                  <button
-                    onClick={() => deleteMessage(m._id)}
-                    className="text-red-500 text-xs ml-2"
-                  >
-                    ❌ Delete
-                  </button>
+                  <button onClick={() => deleteMessage(m._id)} className="text-red-500 text-xs">❌ Delete</button>
                 </div>
               )}
 
               {m.type === "image" && (
-                <>
+                <div className="space-y-2">
                   <img
-                    src={`http://localhost:5000/uploads/${m.content}`}
-                    className="w-40 mt-2 rounded shadow"
+                    src={`${BACKEND_URL}/uploads/${m.content}`}
+                    className="w-full sm:w-1/2 rounded shadow"
                     alt="Uploaded"
                   />
-                  <button
-                    onClick={() => deleteMessage(m._id)}
-                    className="text-red-500 text-xs mt-1"
-                  >
-                    ❌ Delete
-                  </button>
-                </>
+                  <button onClick={() => deleteMessage(m._id)} className="text-red-500 text-xs">❌ Delete</button>
+                </div>
               )}
             </motion.div>
           ))}
         </AnimatePresence>
       </main>
 
-      <footer className="p-4 bg-white shadow-lg flex flex-col sm:flex-row gap-2 border-t text-black">
+      <footer className="p-4 bg-white shadow-lg border-t flex flex-col sm:flex-row gap-2 items-stretch">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyPress}
-          placeholder="Type your message and press Enter…"
+          placeholder="Type a message and press Enter…"
           className="flex-1 px-4 py-2 rounded border shadow-sm focus:outline-purple-500"
           disabled={isUploadingAudio}
         />

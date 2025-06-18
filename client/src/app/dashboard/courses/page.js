@@ -8,13 +8,17 @@ export default function CoursesPage() {
   const [courses, setCourses] = useState([]);
   const [newCourse, setNewCourse] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const BACKEND_URL = "https://lecture-stt.onrender.com";
 
   const fetchCourses = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/courses");
+      const res = await axios.get(`${BACKEND_URL}/api/courses`);
       setCourses(res.data);
     } catch (err) {
       console.error("Error fetching courses:", err);
+      setError("Failed to fetch courses. Try again later.");
     }
   };
 
@@ -23,22 +27,35 @@ export default function CoursesPage() {
     if (!confirmed) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/courses/${id}`);
+      await axios.delete(`${BACKEND_URL}/api/courses/${id}`);
       setCourses((prev) => prev.filter((course) => course._id !== id));
+      alert("Course deleted successfully ✅");
     } catch (err) {
       console.error("Error deleting course:", err.response?.data || err.message);
+      alert("❌ Failed to delete course.");
     }
   };
 
   const addCourse = async () => {
-    if (!newCourse.trim()) return;
+    if (!newCourse.trim()) return alert("Course name cannot be empty!");
+
     try {
       setLoading(true);
-      await axios.post("http://localhost:5000/api/courses", { name: newCourse });
+      await axios.post(
+        `${BACKEND_URL}/api/courses`,
+        { name: newCourse },
+        {
+          headers: {
+            "Content-Type": "application/json", // ✅ Important!
+          },
+        }
+      );
       setNewCourse("");
-      fetchCourses();
+      await fetchCourses();
+      alert("✅ Course added successfully!");
     } catch (err) {
-      console.error("Error adding course:", err);
+      console.error("Error adding course:", err.response?.data || err.message);
+      alert("❌ Failed to add course. Backend might be asleep.");
     } finally {
       setLoading(false);
     }
@@ -74,6 +91,10 @@ export default function CoursesPage() {
           {loading ? "Adding..." : "Add"}
         </button>
       </div>
+
+      {error && (
+        <p className="text-red-600 text-sm mb-4">{error}</p>
+      )}
 
       {courses.length === 0 ? (
         <p className="text-gray-500 text-center">No courses found. Add one above!</p>
